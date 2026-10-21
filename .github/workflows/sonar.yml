@@ -4,16 +4,44 @@ name: SonarQube C++ Analysis
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  sonar:
     runs-on: ubuntu-latest
+
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Check repository files
+      - name: Install CMake
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+
+      - name: Configure C++ project
+        run: cmake -S . -B build
+
+      - name: Install SonarQube Build Wrapper
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v6
+
+      - name: Build C++ project
         run: |
-          echo "GitHub Actions is running"
-          ls -la
+          build-wrapper-linux-x86-64 \
+            --out-dir "$BUILD_WRAPPER_OUT_DIR" \
+            cmake --build build
+
+      - name: Run SonarQube analysis
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
