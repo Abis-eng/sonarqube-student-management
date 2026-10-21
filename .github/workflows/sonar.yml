@@ -37,14 +37,13 @@ jobs:
             --out-dir "$BUILD_WRAPPER_OUT_DIR" \
             cmake --build build
 
-      - name: Create sonar-project.properties
-        run: |
-          echo "sonar.projectKey=Abis-Ahmad_sonarqbe-student-management" > sonar-project.properties
-          echo "sonar.organization=abis-ahmad" >> sonar-project.properties
-          echo "sonar.sources=." >> sonar-project.properties
-          echo "sonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json" >> sonar-project.properties
-
       - name: Run SonarQube analysis
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Abis-Ahmad_sonarqbe-student-management
+            -Dsonar.organization=abis-ahmad
+            -Dsonar.sources=.
+            -Dsonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
