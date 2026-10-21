@@ -1,4 +1,3 @@
-
 name: SonarQube C++ Analysis
 
 on:
@@ -27,21 +26,25 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y cmake g++
 
       - name: Configure C++ project
-        run: cmake -S . -B build
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Install SonarQube Build Wrapper
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v6
 
-      - name: Build C++ project
+      - name: Build C++ project with Build Wrapper
         run: |
           build-wrapper-linux-x86-64 \
             --out-dir "$BUILD_WRAPPER_OUT_DIR" \
             cmake --build build
 
+      - name: Create sonar-project.properties
+        run: |
+          echo "sonar.projectKey=Abis-Ahmad_sonarqbe-student-management" > sonar-project.properties
+          echo "sonar.organization=abis-ahmad" >> sonar-project.properties
+          echo "sonar.sources=." >> sonar-project.properties
+          echo "sonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json" >> sonar-project.properties
+
       - name: Run SonarQube analysis
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
